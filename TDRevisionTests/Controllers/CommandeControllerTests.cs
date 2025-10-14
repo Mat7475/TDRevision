@@ -11,15 +11,15 @@ using TDRevision.Models.DataManager;
 using TDRevision.Models.EntityFramework;
 using TDRevision.Models.Repository;
 
-namespace TDRevisionTests.Controllers.MarqueTests
+namespace TDRevisionTests.Controllers.CommandeTests
 {
     [TestClass]
     [TestCategory("integration")]
-    public class MarquesControllerTests
+    public class CommandesControllerTests
     {
         private CommandeController _controller;
         private AppDbContext _context;
-        private IDataRepository<Commande, int, string> _repo;
+        private CommandeManager _manager;
         private IMapper _mapper;
         private Commande _commandecommun;
 
@@ -38,20 +38,33 @@ namespace TDRevisionTests.Controllers.MarqueTests
             });
             _mapper = config.CreateMapper();
 
-            _controller = new CommandeController(_repo, _mapper);
-
+            _manager = new CommandeManager(_context);
+            _controller = new CommandeController(_manager, _mapper);
 
             _context.Commandes.RemoveRange();
             await _context.SaveChangesAsync();
 
+
+            var utilisateur = new Utilisateur
+            {
+                Nom = "TestNom",
+                Prenom = "TestPrenom",
+                CodePostal = 73000,
+                Ville = "Chambéry"
+            };
+            await _context.Utilisateurs.AddAsync(utilisateur);
+            await _context.SaveChangesAsync();
+
             _commandecommun = new Commande()
             {
-                NomArticle = "ArticleCommun"
+                NomArticle = "ArticleCommun",
+                IdUtilisateur = utilisateur.IdUtilisateur, 
+                Montant = "100"
             };
-            await _repo.AddAsync(_commandecommun);
+            await _manager.AddAsync(_commandecommun);
         }
         [TestMethod]
-        public async Task GetmarqueTest()
+        public async Task GetCommandeTest()
         {
             var result = await _controller.GetCommande(_commandecommun.IdCommande);
 
@@ -61,7 +74,7 @@ namespace TDRevisionTests.Controllers.MarqueTests
         }
 
         [TestMethod]
-        public async Task NotFoundGetmarqueTest()
+        public async Task NotFoundGetCommandeTest()
         {
             var result = await _controller.GetCommande(0);
 
@@ -70,7 +83,7 @@ namespace TDRevisionTests.Controllers.MarqueTests
         }
 
         [TestMethod]
-        public async Task GetmarquesTest()
+        public async Task GetCommandesTest()
         {
             var result = await _controller.GetCommandes();
 
@@ -80,7 +93,7 @@ namespace TDRevisionTests.Controllers.MarqueTests
         }
 
         [TestMethod]
-        public async Task GetmarqueByStringTest()
+        public async Task GetCommandeByStringTest()
         {
             var result = await _controller.GetCommandeByString(_commandecommun.NomArticle);
 
@@ -90,44 +103,44 @@ namespace TDRevisionTests.Controllers.MarqueTests
         }
 
         [TestMethod]
-        public async Task NotFoundGetmarqueByStringTest()
+        public async Task NotFoundGetCommandeByStringTest()
         {
-            var result = await _controller.GetCommandeByString("NonExistentMarque");
+            var result = await _controller.GetCommandeByString("NonExistentCommande");
 
             Assert.IsNotNull(result);
             Assert.IsInstanceOfType(result.Result, typeof(NotFoundResult));
         }
 
         [TestMethod]
-        public async Task PostMarqueTest_Entity()
+        public async Task PostCommandeTest_Entity()
         {
-            var marque = new Commande
+            var Commande = new Commande
             {
                 NomArticle = "CommandePost"
             };
 
-            var actionResult = await _controller.Postcommande(marque);
+            var actionResult = await _controller.Postcommande(Commande);
 
             Assert.IsInstanceOfType(actionResult.Result, typeof(CreatedAtActionResult));
             var created = (CreatedAtActionResult)actionResult.Result;
 
-            var createdMarque = (Commande)created.Value;
-            Assert.AreEqual(marque.NomArticle, createdMarque.NomArticle);
+            var createdCommande = (Commande)created.Value;
+            Assert.AreEqual(Commande.NomArticle, createdCommande.NomArticle);
         }
 
 
         [TestMethod]
-        public async Task DeletemarqueTest()
+        public async Task DeleteCommandeTest()
         {
             var result = await _controller.Deletecommande(_commandecommun.IdCommande);
 
             Assert.IsInstanceOfType(result, typeof(NoContentResult));
-            var deletedMarque = await _repo.GetByIdAsync(_commandecommun.IdCommande);
-            Assert.IsNull(deletedMarque);
+            var deletedCommande = await _manager.GetByIdAsync(_commandecommun.IdCommande);
+            Assert.IsNull(deletedCommande);
         }
 
         [TestMethod]
-        public async Task NotFoundDeletemarqueTest()
+        public async Task NotFoundDeleteCommandeTest()
         {
             var result = await _controller.Deletecommande(0);
 
@@ -135,55 +148,57 @@ namespace TDRevisionTests.Controllers.MarqueTests
         }
 
         [TestMethod]
-        public async Task PutmarqueTest()
+        public async Task PutCommandeTest()
         {
-            var marque = new Commande()
+            var Commande = new Commande()
             {
                 IdCommande = _commandecommun.IdCommande,
-                NomArticle = "CommandeUpdated"
+                NomArticle = "CommandeUpdated",
+                IdUtilisateur = 1,  // AJOUT OBLIGATOIRE
+                Montant = "150"  // Optionnel mais recommandé
             };
 
-            var result = await _controller.Putcommande(_commandecommun.IdCommande, marque);
+            var result = await _controller.Putcommande(_commandecommun.IdCommande, Commande);
 
             Assert.IsInstanceOfType(result, typeof(NoContentResult));
 
-            var fetchedMarque = await _repo.GetByIdAsync(_commandecommun.IdCommande);
-            Assert.AreEqual(marque.NomArticle, fetchedMarque.NomArticle);
+            var fetchedCommande = await _manager.GetByIdAsync(_commandecommun.IdCommande);
+            Assert.AreEqual(Commande.NomArticle, fetchedCommande.NomArticle);
         }
 
         [TestMethod]
-        public async Task NotFoundPutmarqueTest()
+        public async Task NotFoundPutCommandeTest()
         {
-            var marque = new Commande()
+            var Commande = new Commande()
             {
                 IdCommande = 0,
                 NomArticle = "CommandeNonExistant"
             };
 
-            var result = await _controller.Putcommande(0, marque);
+            var result = await _controller.Putcommande(0, Commande);
 
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
         [TestMethod]
-        public async Task BadRequestPutmarqueTest()
+        public async Task BadRequestPutCommandeTest()
         {
-            var marque = new Commande()
+            var Commande = new Commande()
             {
                 IdCommande = _commandecommun.IdCommande + 1,
                 NomArticle = "CommandeMismatched"
             };
 
-            var result = await _controller.Putcommande(_commandecommun.IdCommande, marque);
+            var result = await _controller.Putcommande(_commandecommun.IdCommande, Commande);
 
             Assert.IsInstanceOfType(result, typeof(BadRequestResult));
         }
 
         [TestMethod]
-        public async Task BadRequestPostmarqueTest()
+        public async Task BadRequestPostCommandeTest()
         {
-            // Arrange : création d'une marque invalide (Nom requis manquant)
-            var marque = new Commande
+            // Arrange : création d'une Commande invalide (Nom requis manquant)
+            var Commande = new Commande
             {
                 NomArticle = null
             };
@@ -192,7 +207,7 @@ namespace TDRevisionTests.Controllers.MarqueTests
             _controller.ModelState.AddModelError("Nom", "Required");
 
             // Act : appeler le POST
-            var actionResult = await _controller.Postcommande(marque);
+            var actionResult = await _controller.Postcommande(Commande);
 
             // Assert : vérifier qu'on obtient bien un BadRequest
             Assert.IsInstanceOfType(actionResult.Result, typeof(BadRequestObjectResult));
