@@ -1,0 +1,6 @@
+@TDRevision_HostAddress = http://localhost:5025
+
+GET {{TDRevision_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
