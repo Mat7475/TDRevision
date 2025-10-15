@@ -72,7 +72,7 @@ namespace TD1Tests.Controllers.CommandeTests
         {
             // Arrange
             _mockRepo.Setup(repo => repo.GetByIdAsync(0))
-                     .ReturnsAsync(new ActionResult<Commande>((Commande?)null));
+                     .ReturnsAsync((Commande)null);
             // Act
             ActionResult<Commande> result = _controller.GetCommande(0).GetAwaiter().GetResult();
             // Assert
@@ -114,7 +114,7 @@ namespace TD1Tests.Controllers.CommandeTests
         {
             // Arrange
             _mockRepo.Setup(repo => repo.GetByKeyAsync("CommandeDefault"))
-                     .ReturnsAsync(new ActionResult<Commande>(_CommandeCommun));
+                     .ReturnsAsync(_CommandeCommun);
             // Act
             ActionResult<Commande> result = _controller.GetCommandeByString("CommandeDefault").GetAwaiter().GetResult();
             // Assert
@@ -128,7 +128,7 @@ namespace TD1Tests.Controllers.CommandeTests
         {
             // Arrange
             _mockRepo.Setup(repo => repo.GetByKeyAsync("NonExistentProduct"))
-                     .ReturnsAsync(new ActionResult<Commande>((Commande?)null));
+                     .ReturnsAsync((Commande)null);
             // Act
             ActionResult<Commande> result = _controller.GetCommandeByString("NonExistentProduct").GetAwaiter().GetResult();
             // Assert
@@ -172,7 +172,7 @@ namespace TD1Tests.Controllers.CommandeTests
                 NomArticle = "CommandeMisAJour"
             };
             _mockRepo.Setup(repo => repo.GetByIdAsync(1))
-                     .ReturnsAsync(new ActionResult<Commande>(existingCommande));
+                         .ReturnsAsync(existingCommande);
             _mockRepo.Setup(repo => repo.UpdateAsync(existingCommande, updatedCommande))
                      .Returns(Task.CompletedTask)
                      .Verifiable();
@@ -193,7 +193,7 @@ namespace TD1Tests.Controllers.CommandeTests
                 NomArticle = "CommandeDefault"
             };
             _mockRepo.Setup(repo => repo.GetByIdAsync(1))
-                     .ReturnsAsync(new ActionResult<Commande>(CommandeToDelete));
+                      .ReturnsAsync(CommandeToDelete);
             _mockRepo.Setup(repo => repo.DeleteAsync(CommandeToDelete))
                      .Returns(Task.CompletedTask)
                      .Verifiable();
@@ -209,7 +209,7 @@ namespace TD1Tests.Controllers.CommandeTests
         {
             // Arrange
             _mockRepo.Setup(repo => repo.GetByIdAsync(999))
-                     .ReturnsAsync(new ActionResult<Commande>((Commande?)null));
+                     .ReturnsAsync((Commande)null);
             // Act
             var result = _controller.Deletecommande(999).GetAwaiter().GetResult();
             // Assert
@@ -257,7 +257,7 @@ namespace TD1Tests.Controllers.CommandeTests
                 NomArticle = "CommandeMisAJour"
             };
             _mockRepo.Setup(repo => repo.GetByIdAsync(1))
-                     .ReturnsAsync(new ActionResult<Commande>((Commande?)null));
+             .ReturnsAsync((Commande)null);
             // Act
             var result = _controller.Putcommande(1, updatedCommande).GetAwaiter().GetResult();
             // Assert
