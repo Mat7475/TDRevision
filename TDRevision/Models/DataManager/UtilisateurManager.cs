@@ -46,4 +46,9 @@ public class UtilisateurManager : IDataRepository<Utilisateur,int,string>
         _context.Entry(entityToUpdate).CurrentValues.SetValues(entity);
         await _context.SaveChangesAsync();
     }
+
+    Task<Utilisateur> SearchableRepository<Utilisateur, string>.GetByKeyAsync(string str)
+    {
+        throw new NotImplementedException();
+    }
 }

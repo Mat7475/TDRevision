@@ -11,7 +11,7 @@ namespace Front.Service
         public WebServiceCommande(HttpClient httpClient, string endpoint)
         {
             _httpClient = httpClient;
-            _httpClient.BaseAddress = new Uri("http://localhost:5283/api/");
+            _httpClient.BaseAddress = new Uri("https://localhost:7112/api/");
             _endpoint = endpoint;
         }
 
