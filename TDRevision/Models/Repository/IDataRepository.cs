@@ -14,7 +14,7 @@ namespace TDRevision.Models.Repository
 
     public interface SearchableRepository<Tentity, TKey>
     {
-        Task<Commande> GetByKeyAsync(TKey str);
+        Task<Tentity> GetByKeyAsync(TKey str);
     }
 
     public interface WriteableRepository<Tentity>  

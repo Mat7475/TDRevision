@@ -19,6 +19,9 @@ namespace Front.Models
         [Column("COM_MONTANT")]
         public string? Montant { get; set; }
 
+        [ForeignKey("IdUtilisateur")]
+        [InverseProperty(nameof(Utilisateur.Commandes))]
+        public virtual Utilisateur? CommandeNav { get; set; } = null!;
 
     }
 }
