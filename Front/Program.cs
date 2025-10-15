@@ -18,6 +18,12 @@ builder.Services.AddScoped<IService<Commande, int, string>>(sp =>
     return new WebServiceCommande(httpClient, "Commande");
 });
 
+builder.Services.AddScoped<IService<Utilisateur, int, string>>(sp =>
+{
+    var httpClient = sp.GetRequiredService<HttpClient>();
+    return new WebServiceUtilisateur(httpClient, "Utilisateur");
+});
+
 // Enregistrement des ViewModels
 builder.Services.AddScoped<CommandesViewModel>();
 
