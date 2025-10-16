@@ -38,7 +38,7 @@ public class CommandeManager : IDataRepository<Commande,int,string>
 
     public async Task<Commande> GetByKeyAsync(string str)
     {
-        return await _context.Commandes.Include(c => c.CommandeNav).FirstOrDefaultAsync(c => c.NomArticle == str);
+        return await _context.Commandes.FirstOrDefaultAsync(c => c.NomArticle.ToLower().Contains(str.ToLower()));
     }
 
     public async Task UpdateAsync(Commande entityToUpdate, Commande entity)

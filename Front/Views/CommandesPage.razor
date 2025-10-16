@@ -1,10 +1,15 @@
 ﻿@page "/commandes"
 @using Front.Models
 @using Front.ViewModels
+@using Front.Service
 @inject CommandesViewModel ViewModel
+@inject IService<Commande, int, string> CommandeService
+@inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Liste des Commandes</PageTitle>
+
+<link href="css/commandes.css" rel="stylesheet" />
 
 <div class="container mt-4">
     <h1 class="mb-4">Gestion des Commandes</h1>
@@ -16,6 +21,80 @@
             <button type="button" class="btn-close" @onclick="@(() => ViewModel.ErrorMessage = string.Empty)"></button>
         </div>
     }
+
+    @if (!string.IsNullOrEmpty(_searchError))
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            @_searchError
+            <button type="button" class="btn-close" @onclick="@(() => _searchError = string.Empty)"></button>
+        </div>
+    }
+
+    <!-- Barre de recherche -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <label for="searchInput" class="form-label">
+                        <i class="bi bi-search"></i> Rechercher une commande par nom d'article
+                    </label>
+                    <input type="text"
+                           id="searchInput"
+                           class="form-control"
+                           @bind="_searchTerm"
+                           @bind:event="oninput"
+                           placeholder="Ex: Ordinateur portable"
+                           @onkeypress="HandleKeyPress" />
+                </div>
+                <div class="col-md-4">
+                    <div class="btn-group w-100" role="group">
+                        <button class="btn btn-primary"
+                                @onclick="RechercherCommande"
+                                disabled="@_isSearching">
+                            @if (_isSearching)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-search me-2"></i>
+                            }
+                            Rechercher
+                        </button>
+                        <button class="btn btn-outline-secondary"
+                                @onclick="ResetSearch"
+                                disabled="@_isSearching">
+                            <i class="bi bi-x-circle"></i> Effacer
+                        </button>
+                    </div>
+                </div>
+            </div>
+            @if (_commandeTrouvee != null)
+            {
+                <div class="mt-3 alert alert-success">
+                    <h6 class="mb-2">
+                        <i class="bi bi-check-circle"></i> Commande trouvée :
+                    </h6>
+                    <div class="result-card p-3 bg-white rounded border">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>ID:</strong> @_commandeTrouvee.IdCommande
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Article:</strong> @_commandeTrouvee.NomArticle
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Montant:</strong> @_commandeTrouvee.Montant €
+                            </div>
+                            <div class="col-md-2">
+                                <strong>ID Utilisateur:</strong> @_commandeTrouvee.IdUtilisateur
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
 
     @if (ViewModel.IsLoading)
     {
@@ -31,9 +110,14 @@
         <div class="card shadow">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Liste des Commandes (@ViewModel.Commandes.Count)</h5>
-                <button class="btn btn-light btn-sm" @onclick="RefreshCommandes">
-                    <i class="bi bi-arrow-clockwise"></i> Actualiser
-                </button>
+                <div class="btn-group">
+                    <button class="btn btn-light btn-sm" @onclick="RefreshCommandes">
+                        <i class="bi bi-arrow-clockwise"></i> Actualiser
+                    </button>
+                    <button class="btn btn-success btn-sm" @onclick="NavigateToAdd">
+                        <i class="bi bi-plus-circle"></i> Ajouter
+                    </button>
+                </div>
             </div>
             <div class="card-body p-0">
                 @if (ViewModel.Commandes.Any())
@@ -42,7 +126,6 @@
                         <table class="table table-hover table-striped mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>ID</th>
                                     <th>Article</th>
                                     <th>Montant</th>
                                     <th>ID Utilisateur</th>
@@ -52,8 +135,7 @@
                             <tbody>
                                 @foreach (var commande in ViewModel.Commandes)
                                 {
-                                    <tr>
-                                        <td>@commande.IdCommande</td>
+                                    <tr class="@(commande.IdCommande == _commandeTrouvee?.IdCommande ? "table-success" : "")">
                                         <td>@commande.NomArticle</td>
                                         <td>@commande.Montant €</td>
                                         <td>@commande.IdUtilisateur</td>
@@ -95,6 +177,11 @@
 </div>
 
 @code {
+    private string _searchTerm = string.Empty;
+    private Commande? _commandeTrouvee = null;
+    private bool _isSearching = false;
+    private string _searchError = string.Empty;
+
     protected override async Task OnInitializedAsync()
     {
         await ViewModel.LoadCommandesAsync();
@@ -104,6 +191,54 @@
     private void OnViewModelPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RechercherCommande()
+    {
+        if (string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            _searchError = "Veuillez entrer un nom d'article à rechercher";
+            return;
+        }
+
+        try
+        {
+            _isSearching = true;
+            _searchError = string.Empty;
+            _commandeTrouvee = null;
+
+            _commandeTrouvee = await CommandeService.GetByKeyAsync(_searchTerm);
+
+            if (_commandeTrouvee == null)
+            {
+                _searchError = $"Aucune commande trouvée avec l'article '{_searchTerm}'";
+            }
+        }
+        catch (Exception ex)
+        {
+            _searchError = $"Erreur lors de la recherche : {ex.Message}";
+            _commandeTrouvee = null;
+        }
+        finally
+        {
+            _isSearching = false;
+        }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await RechercherCommande();
+        }
+    }
+
+    private async Task ResetSearch()
+    {
+        _searchTerm = string.Empty;
+        _commandeTrouvee = null;
+        _searchError = string.Empty;
+        await ViewModel.LoadCommandesAsync();
     }
 
     private async Task RefreshCommandes()
@@ -116,12 +251,16 @@
         if (await JSRuntime.InvokeAsync<bool>("confirm", "Êtes-vous sûr de vouloir supprimer cette commande ?"))
         {
             await ViewModel.DeleteCommandeAsync(id);
+            if (_commandeTrouvee?.IdCommande == id)
+            {
+                _commandeTrouvee = null;
+            }
         }
     }
 
     private void NavigateToDetails(int id)
     {
-        // Navigation.NavigateTo($"/commandes/{id}");
+        Navigation.NavigateTo($"/commandes/{id}");
     }
 
     private void NavigateToEdit(int id)
@@ -129,18 +268,13 @@
         // Navigation.NavigateTo($"/commandes/edit/{id}");
     }
 
+    private void NavigateToAdd()
+    {
+        Navigation.NavigateTo("/commandes/ajouter");
+    }
+
     public void Dispose()
     {
         ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
     }
 }
-
-<style>
-    .btn-group .btn {
-        margin: 0 2px;
-    }
-
-    .table td {
-        vertical-align: middle;
-    }
-</style>
