@@ -11,8 +11,7 @@ namespace Front.Service
         public WebServiceCommande(HttpClient httpClient, string endpoint)
         {
             _httpClient = httpClient;
-            _httpClient.BaseAddress = new Uri("https://localhost:7112/api/");
-            _endpoint = endpoint;
+            _endpoint = $"https://localhost:7112/api/{endpoint}";
         }
 
         public async Task<IEnumerable<Commande>> GetAllAsync()
